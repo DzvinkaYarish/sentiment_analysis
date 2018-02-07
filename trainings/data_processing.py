@@ -9,19 +9,20 @@ def load_data_csv(path):
     df = pd.read_csv(path, names=['rating', 'title', 'review'])
     if df.duplicated('review').any():
         df = df.drop_duplicates('review')
+    df['rating'] = df['rating'].replace([1, 2], 0)
+    df['rating'] = df['rating'].replace([4, 5], 1)
+    df['rating'] = df['rating'].replace([3], 2)
     return df
 
 def load_data_json(path_or_object):
     df = pd.read_json(path_or_object)
     if df.duplicated('review').any():
         df = df.drop_duplicates('review')
+
     return df
 
 
 def resample_dataframe(df):
-    df['rating'] = df['rating'].replace([1, 2], -1)
-    df['rating'] = df['rating'].replace([4, 5], 1)
-    df['rating'] = df['rating'].replace([3], 0)
     smallest_class = df['rating'].value_counts().argmin()
     num_samples =  df['rating'].value_counts().min()
     downsampled_df = df[df.rating==smallest_class]

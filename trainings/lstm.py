@@ -1,59 +1,75 @@
-import sys
 import datetime
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Embedding, Dropout
+from keras.layers import Dense, LSTM, Embedding, Dropout, Flatten
 from keras.layers.convolutional import Conv1D, MaxPooling1D
+from keras import losses
 from data_processing  import process_data, resample_dataframe, load_data_csv
 
 
-#ARGS: train path test path modelsave path
+with open('configurations.txt', 'r') as file:
+    lines = file.readlines()[1:]
+    train_path = lines[0].split('=')[1].strip()
+    test_path = lines[1].split('=')[1].strip()
+    save_model_path = lines[2].split('=')[1].strip()
 
-cmd_arg = sys.argv
-assert len(cmd_arg) == 4
-train_path = cmd_arg[1]
-test_path = cmd_arg[2]
-save_model_path = cmd_arg[3]
+    MAX_NUM_WORDS = int(lines[3].split('=')[1].strip())
+    NUM_WORDS_SEQ = int(lines[4].split('=')[1].strip())
+    EMBEDDING_DIM = int(lines[5].split('=')[1].strip())
 
-MAX_NUM_WORDS = 50000
-NUM_WORDS_SEQ = 100
-EMBEDDING_DIM = 300
+    num_filters = int(lines[6].split('=')[1].strip())
+    kernel_size = int(lines[7].split('=')[1].strip())
+    epochs = int(lines[8].split('=')[1].strip())
+    batch_size = int(lines[9].split('=')[1].strip())
+    resample = bool(lines[10].split('=')[1].strip())
 
 df = load_data_csv(train_path)
-resampled_df = resample_dataframe(df)
 
-X_train, y_train = process_data(resampled_df, MAX_NUM_WORDS, NUM_WORDS_SEQ, labels=True)
+if resample:
+    df = resample_dataframe(df)
 
-# X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2)
+print('Found {} training samples'.format(df.shape[0]))
+print(df.head(5))
 
+X_train, y_train = process_data(df, MAX_NUM_WORDS, NUM_WORDS_SEQ, labels=True)
 
 
 print('Initializing model...')
 model = Sequential()
 model.add(Embedding(MAX_NUM_WORDS, EMBEDDING_DIM, input_length=NUM_WORDS_SEQ))
 model.add(Dropout(0.2))
-model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')) # filter_size - how many words to consider
+model.add(Conv1D(filters=num_filters, kernel_size=kernel_size, padding='same', activation='relu')) # filter_size - how many words to consider
 model.add(MaxPooling1D(pool_size=2))
-model.add(LSTM(100))
 model.add(Dropout(0.2))
-model.add(Dense(1, activation='sigmoid'))
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.add(Conv1D(filters=num_filters, kernel_size=kernel_size, padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(Dropout(0.2))
+model.add(Conv1D(filters=num_filters, kernel_size=kernel_size, padding='same', activation='relu'))
+model.add(MaxPooling1D(pool_size=25))
+
+model.add(LSTM(128))
+# model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dense(3, activation='sigmoid'))
+model.compile(loss=losses.sparse_categorical_crossentropy, optimizer='adam', metrics=['accuracy'])
 print(model.summary())
 
 
+
 print('Training...')
-model.fit(X_train, y_train, batch_size=100, epochs=10)
+model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs)
 
 df = load_data_csv(test_path)
+if resample:
 
-resampled_df = resample_dataframe(df)
+    df = resample_dataframe(df)
 
-X_test, y_test = process_data(resampled_df, MAX_NUM_WORDS, NUM_WORDS_SEQ, labels=True)
+
+X_test, y_test = process_data(df, MAX_NUM_WORDS, NUM_WORDS_SEQ, labels=True)
 acc = model.evaluate(X_test, y_test)
 
 print('accuracy: {}'.format(acc))
-with open('../logs/log.txt', 'r') as file:
+with open('/logs/log.txt', 'r') as file:
     file.write('{} accuracy: {}\n'.format(str(datetime.datetime.now()), acc))
 
 
 model.save(save_model_path)
-# pickle.dump(model, save_model_path)
