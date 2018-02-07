@@ -68,7 +68,7 @@ X_test, y_test = process_data(df, MAX_NUM_WORDS, NUM_WORDS_SEQ, labels=True)
 acc = model.evaluate(X_test, y_test)
 
 print('accuracy: {}'.format(acc))
-with open('/logs/log.txt', 'r') as file:
+with open('logs/log.txt', 'r') as file:
     file.write('{} accuracy: {}\n'.format(str(datetime.datetime.now()), acc))
 
 

@@ -1,5 +1,5 @@
 RUN TRAINIGS FROM ROOT DIR OF THE PROJECT, RUN SERVER FROM ITS DIR
-train_path=data/train.csv
+train_path=data/test.csv
 test_path=data/test.csv
 model_path=models/cnn_lstm.h5
 MAX_NUM_WORDS=50000
