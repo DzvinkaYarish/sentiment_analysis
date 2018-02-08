@@ -1,0 +1,14 @@
+{
+"train_data_path" : "data/batch.csv",
+"test_data_path" : "data/batch.csv",
+"model_path" : "models/cnn_lstm.h5",
+"MAX_NUM_WORDS" : 50000,
+"NUM_WORDS_SEQ" : 100,
+"EMBEDDING_DIM" : 300,
+"num_filters" : 128,
+"epochs" : 1,
+"batch_size" : 128,
+"resample" : "False",
+"user_samples_path" : "../data/user_samples.csv",
+"retrain_when":1
+}
